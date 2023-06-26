@@ -8,7 +8,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -54,10 +53,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (!isOnline()) {
 
-            new AlertDialog.Builder(this).setTitle("No internet").setMessage("Your device is not connected to the Internet. Connect to the Internet to use maps").setNeutralButton(R.string.quit, (dialog, which) -> {
-                // Continue with delete operation
-                System.exit(0);
-            }).setIcon(android.R.drawable.ic_menu_report_image).show();
+            new AlertDialog.Builder(this).setTitle("No internet")
+                    .setMessage("Your device is not connected to the Internet. Connect to the Internet to use maps")
+                    .setNeutralButton(R.string.quit, (dialog, which) -> System.exit(0))
+                    .setIcon(android.R.drawable.ic_menu_report_image).show();
 
         } else {
             loadPoints();
@@ -82,10 +81,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         RequestQueue volleyQueue = Volley.newRequestQueue(MainActivity.this);
         String url = "http://10.0.2.2:8080/points";
 
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
-                Request.Method.GET,
-                url,
-                null,
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
 
                 // lambda function for handling the case
                 // when the HTTP request succeeds
@@ -97,10 +93,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         for (int i = 0; i < points.length(); ++i) {
                             recyclePoints.add(gson.fromJson(points.getString(i), RecyclePoint.class));
                             recyclePoints.get(i).parseCoordinates();
-
-                            if (i < 10) {
-                                Log.d("RecyclePoint", recyclePoints.get(i).toString());
-                            }
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -110,12 +102,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // lambda function for handling the case
                 // when the HTTP request fails
                 error -> {
-                    // make a Toast telling the user
-                    // that something went wrong
-                    Toast.makeText(MainActivity.this, "Some error occurred! Cannot get points", Toast.LENGTH_LONG).show();
+                    new AlertDialog.Builder(this).setTitle("Unable to get recycle points")
+                            .setMessage("RecyMap failed to get points from the main server. Server may be down or under maintenance. Try again later")
+                            .setNeutralButton(android.R.string.yes, null).setIcon(android.R.drawable.ic_menu_report_image).show();
                     Log.e("PointsError", "Points error: " + error.getMessage());
-                }
-        );
+                });
 
         // add the json request object created above
         // to the Volley request queue
@@ -194,7 +185,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         // Set the map's camera position to the current location of the device.
                         lastKnownLocation = task.getResult();
                         if (lastKnownLocation != null) {
-                            myMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+                            myMap.moveCamera(CameraUpdateFactory
+                                    .newLatLngZoom(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()), DEFAULT_ZOOM));
                         }
                     } else {
                         Log.d(TAG, "Current location is null. Using defaults.");
@@ -214,9 +206,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void putRecyclePointsOnMap() {
         for (int i = 0; i < recyclePoints.size(); ++i) {
-            myMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(recyclePoints.get(i).latitude, recyclePoints.get(i).longitude))
-                    .title(recyclePoints.get(i).title));
+            myMap.addMarker(new MarkerOptions().position(new LatLng(recyclePoints.get(i).latitude, recyclePoints.get(i).longitude))
+                    .title(recyclePoints.get(i).title).snippet(recyclePoints.get(i).address));
         }
     }
 }
