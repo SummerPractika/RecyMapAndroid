@@ -1,5 +1,6 @@
 package com.example.recymap;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -41,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean locationPermissionGranted;
 
     private GoogleMap myMap;
-    private static final LatLng defaultLocation = new LatLng(59.95, 30.32);
+    private static final LatLng defaultLocation = new LatLng(59.94, 30.36);
     private FusedLocationProviderClient fusedLocationProviderClient;
     private Location lastKnownLocation;
     private static final int DEFAULT_ZOOM = 14;
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             new AlertDialog.Builder(this).setTitle("No internet")
                     .setMessage("Your device is not connected to the Internet. Connect to the Internet to use maps")
                     .setNeutralButton(R.string.quit, (dialog, which) -> System.exit(0))
-                    .setIcon(android.R.drawable.ic_menu_report_image).show();
+                    .setIcon(android.R.drawable.stat_notify_error).show();
 
         } else {
             loadPoints();
@@ -104,7 +105,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 error -> {
                     new AlertDialog.Builder(this).setTitle("Unable to get recycle points")
                             .setMessage("RecyMap failed to get points from the main server. Server may be down or under maintenance. Try again later")
-                            .setNeutralButton(android.R.string.yes, null).setIcon(android.R.drawable.ic_menu_report_image).show();
+                            .setNeutralButton(android.R.string.yes, null)
+                            .setIcon(android.R.drawable.ic_menu_report_image).show();
                     Log.e("PointsError", "Points error: " + error.getMessage());
                 });
 
@@ -130,12 +132,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
          * device. The result of the permission request is handled by a callback,
          * onRequestPermissionsResult.
          */
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationPermissionGranted = true;
             updateLocationUI();
             getDeviceLocation();
         } else {
-            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+            Activity mainActivity = this;
+
+            new AlertDialog.Builder(this).setTitle("Location access requirement")
+                    .setMessage("RecyMap requires access to your precise location to work properly")
+                    .setNegativeButton(android.R.string.no, (dialog, which) -> {
+                        updateLocationUI();
+                        getDeviceLocation();
+                    })
+                    .setPositiveButton(android.R.string.yes, (dialog, which) -> ActivityCompat
+                            .requestPermissions(mainActivity, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION,
+                            android.Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION))
+                    .setIcon(android.R.drawable.ic_menu_info_details).show();
         }
     }
 
